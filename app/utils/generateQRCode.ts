@@ -1,5 +1,3 @@
-import QRCodeStyling from "qr-code-styling";
-
 interface GenerateQRCodeOptions {
   link: string;
   logoSrc?: string;
@@ -15,6 +13,7 @@ export async function generateQRCode({
   width = 500,
   height = 500,
 }: GenerateQRCodeOptions) {
+  const { default: QRCodeStyling } = await import("qr-code-styling");
   const QR_SIZE = Math.min(width, height) * 0.75;
 
   const qrCode = new QRCodeStyling({
@@ -40,7 +39,8 @@ export async function generateQRCode({
   if (!(qrBlob instanceof Blob)) return;
 
   const img = new Image();
-  img.src = URL.createObjectURL(qrBlob);
+  const qrBlobUrl = URL.createObjectURL(qrBlob);
+  img.src = qrBlobUrl;
 
   await new Promise<void>((resolve) => {
     img.onload = () => resolve();
@@ -61,13 +61,16 @@ export async function generateQRCode({
   const y = (height - QR_SIZE) / 2;
 
   ctx.drawImage(img, x, y, QR_SIZE, QR_SIZE);
+  URL.revokeObjectURL(qrBlobUrl);
 
   canvas.toBlob((blob) => {
     if (!blob) return;
 
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
+    const downloadUrl = URL.createObjectURL(blob);
+    a.href = downloadUrl;
     a.download = `${fileName}.png`;
     a.click();
+    URL.revokeObjectURL(downloadUrl);
   });
 }
